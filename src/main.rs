@@ -1,4 +1,4 @@
-use yew::{function_component, html, Callback, Html, Properties};
+use yew::{function_component, html, use_state, Callback, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 struct SquareProps {
@@ -6,22 +6,26 @@ struct SquareProps {
 }
 
 #[function_component]
-fn Square(SquareProps { value }: &SquareProps) -> Html {
+fn Square() -> Html {
+    let value = use_state(|| None);
+
     let button_onclick = {
+        let value = value.clone();
+
         Callback::from(move |_| {
-            log::info!("click");
+            value.set(Some("X"));
         })
     };
 
     html! {
         <button class="square" onclick={button_onclick}>
-            { value }
+            { *value }
         </button>
     }
 }
 
-fn render_square(i: i32) -> Html {
-    html! { <Square value={i} /> }
+fn render_square(_i: i32) -> Html {
+    html! { <Square /> }
 }
 
 #[function_component]
