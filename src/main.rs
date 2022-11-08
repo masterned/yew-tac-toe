@@ -1,15 +1,21 @@
-use yew::{function_component, html, Html};
+use yew::{function_component, html, Html, Properties};
+
+#[derive(Properties, PartialEq)]
+struct SquareProps {
+    value: i32,
+}
 
 #[function_component]
-fn Square() -> Html {
+fn Square(SquareProps { value }: &SquareProps) -> Html {
     html! {
         <button class="square">
+            { value }
         </button>
     }
 }
 
-fn render_square(_i: i32) -> Html {
-    html! { <Square /> }
+fn render_square(i: i32) -> Html {
+    html! { <Square value={i} /> }
 }
 
 #[function_component]
