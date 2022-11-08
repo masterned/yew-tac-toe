@@ -1,4 +1,4 @@
-use yew::{function_component, html, Html, Properties};
+use yew::{function_component, html, Callback, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 struct SquareProps {
@@ -7,8 +7,14 @@ struct SquareProps {
 
 #[function_component]
 fn Square(SquareProps { value }: &SquareProps) -> Html {
+    let button_onclick = {
+        Callback::from(move |_| {
+            log::info!("click");
+        })
+    };
+
     html! {
-        <button class="square">
+        <button class="square" onclick={button_onclick}>
             { value }
         </button>
     }
@@ -46,7 +52,6 @@ fn Board() -> Html {
 
 #[function_component]
 fn Game() -> Html {
-    log::info!("Hello World!");
     html! {
         <div class="game">
             <div class="game-board">
