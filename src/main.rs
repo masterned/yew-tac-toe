@@ -46,6 +46,7 @@ fn Board() -> Html {
 
 #[function_component]
 fn Game() -> Html {
+    log::info!("Hello World!");
     html! {
         <div class="game">
             <div class="game-board">
@@ -60,5 +61,6 @@ fn Game() -> Html {
 }
 
 fn main() {
+    wasm_logger::init(wasm_logger::Config::default());
     yew::Renderer::<Game>::new().render();
 }
