@@ -24,13 +24,13 @@ fn Square() -> Html {
     }
 }
 
-fn render_square(_i: i32) -> Html {
-    html! { <Square /> }
-}
-
 #[function_component]
 fn Board() -> Html {
     let status = "Next player: X";
+
+    let render_square = |_i: usize| {
+        html! { <Square /> }
+    };
 
     html! {
         <div>
