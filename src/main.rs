@@ -1,25 +1,18 @@
-use yew::{function_component, html, use_state, Callback, Html, Properties};
+use yew::{
+    function_component, html, use_state, Callback, Html, MouseEvent, Properties, UseStateHandle,
+};
 
 #[derive(Properties, PartialEq)]
 struct SquareProps {
-    value: i32,
+    value: Option<String>,
+    onclick: Callback<MouseEvent>,
 }
 
 #[function_component]
-fn Square() -> Html {
-    let value = use_state(|| None);
-
-    let button_onclick = {
-        let value = value.clone();
-
-        Callback::from(move |_| {
-            value.set(Some("X"));
-        })
-    };
-
+fn Square(SquareProps { value, onclick }: &SquareProps) -> Html {
     html! {
-        <button class="square" onclick={button_onclick}>
-            { *value }
+        <button class="square" {onclick}>
+            { value.clone().unwrap_or("".to_string()) }
         </button>
     }
 }
@@ -27,9 +20,21 @@ fn Square() -> Html {
 #[function_component]
 fn Board() -> Html {
     let status = "Next player: X";
+    let squares: UseStateHandle<[Option<&str>; 9]> = use_state(|| [None; 9]);
 
-    let render_square = |_i: usize| {
-        html! { <Square /> }
+    let handle_click = |i: usize| {
+        let squares = squares.clone();
+
+        Callback::from(move |_| {
+            let mut squares_clone = (*squares).clone();
+            squares_clone[i] = Some("X");
+            squares.set(squares_clone);
+        })
+    };
+
+    let render_square = |i: usize| {
+        let value = (*squares)[i];
+        html! { <Square {value} onclick={handle_click(i)} /> }
     };
 
     html! {
