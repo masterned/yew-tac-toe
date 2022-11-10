@@ -19,16 +19,20 @@ fn Square(SquareProps { value, onclick }: &SquareProps) -> Html {
 
 #[function_component]
 fn Board() -> Html {
-    let status = "Next player: X";
+    let x_is_next = use_state(|| true);
+
+    let status = format!("Next player: {}", if *x_is_next { "X" } else { "O" });
     let squares: UseStateHandle<[Option<&str>; 9]> = use_state(|| [None; 9]);
 
     let handle_click = |i: usize| {
         let squares = squares.clone();
+        let x_is_next = x_is_next.clone();
 
         Callback::from(move |_| {
             let mut squares_clone = (*squares).clone();
-            squares_clone[i] = Some("X");
+            squares_clone[i] = if *x_is_next { Some("X") } else { Some("O") };
             squares.set(squares_clone);
+            x_is_next.set(!(*x_is_next));
         })
     };
 
