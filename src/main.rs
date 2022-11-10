@@ -17,18 +17,48 @@ fn Square(SquareProps { value, onclick }: &SquareProps) -> Html {
     }
 }
 
+fn calculate_winner(squares: [Option<&str>; 9]) -> Option<&str> {
+    const LINES: [[usize; 3]; 8] = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+    ];
+
+    for line in LINES {
+        let [a, b, c] = line;
+        if squares[a] == squares[b] && squares[a] == squares[c] {
+            return squares[a];
+        }
+    }
+
+    None
+}
+
 #[function_component]
 fn Board() -> Html {
     let x_is_next = use_state(|| true);
-
-    let status = format!("Next player: {}", if *x_is_next { "X" } else { "O" });
     let squares: UseStateHandle<[Option<&str>; 9]> = use_state(|| [None; 9]);
+
+    let winner = calculate_winner(*squares);
+    let status = match winner {
+        Some(mark) => format!("Winner: {mark}"),
+        None => format!("Next player: {}", if *x_is_next { "X" } else { "O" }),
+    };
 
     let handle_click = |i: usize| {
         let squares = squares.clone();
         let x_is_next = x_is_next.clone();
 
         Callback::from(move |_| {
+            if winner.is_some() {
+                return;
+            }
+
             let mut squares_clone = (*squares).clone();
             squares_clone[i] = if *x_is_next { Some("X") } else { Some("O") };
             squares.set(squares_clone);
