@@ -55,7 +55,7 @@ fn Board() -> Html {
         let x_is_next = x_is_next.clone();
 
         Callback::from(move |_| {
-            if winner.is_some() {
+            if winner.is_some() || (*squares)[i].is_some() {
                 return;
             }
 
