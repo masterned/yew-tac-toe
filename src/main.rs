@@ -1,11 +1,9 @@
-use yew::{
-    function_component, html, use_state, Callback, Html, MouseEvent, Properties, UseStateHandle,
-};
+use yew::{function_component, html, use_state, Callback, Html, MouseEvent, Properties};
 
 #[derive(Properties, PartialEq)]
 struct SquareProps {
     value: Option<String>,
-    onclick: Callback<MouseEvent>,
+    onclick: Callback<MouseEvent, ()>,
 }
 
 #[function_component]
@@ -39,41 +37,27 @@ fn calculate_winner(squares: [Option<&str>; 9]) -> Option<&str> {
     None
 }
 
+#[derive(Properties, PartialEq)]
+struct BoardProps<'a> {
+    squares: [Option<&'a str>; 9],
+    handle_click: Callback<usize, Callback<MouseEvent>>,
+}
+
 #[function_component]
-fn Board() -> Html {
-    let x_is_next = use_state(|| true);
-    let squares: UseStateHandle<[Option<&str>; 9]> = use_state(|| [None; 9]);
-
-    let winner = calculate_winner(*squares);
-    let status = match winner {
-        Some(mark) => format!("Winner: {mark}"),
-        None => format!("Next player: {}", if *x_is_next { "X" } else { "O" }),
-    };
-
-    let handle_click = |i: usize| {
-        let squares = squares.clone();
-        let x_is_next = x_is_next.clone();
-
-        Callback::from(move |_| {
-            if winner.is_some() || (*squares)[i].is_some() {
-                return;
-            }
-
-            let mut squares_clone = (*squares).clone();
-            squares_clone[i] = if *x_is_next { Some("X") } else { Some("O") };
-            squares.set(squares_clone);
-            x_is_next.set(!(*x_is_next));
-        })
-    };
-
+fn Board(
+    BoardProps {
+        squares,
+        handle_click,
+    }: &BoardProps<'static>,
+) -> Html {
     let render_square = |i: usize| {
-        let value = (*squares)[i];
-        html! { <Square {value} onclick={handle_click(i)} /> }
+        let value = squares[i];
+        let onclick = handle_click.emit(i);
+        html! { <Square {value} {onclick} /> }
     };
 
     html! {
         <div>
-            <div class="status">{status}</div>
             <div class="board-row">
                 { render_square(0) }
                 { render_square(1) }
@@ -95,13 +79,59 @@ fn Board() -> Html {
 
 #[function_component]
 fn Game() -> Html {
+    let history = use_state(|| {
+        let mut history = Vec::new();
+        let empty_board: [Option<&str>; 9] = [None; 9];
+        history.push(empty_board);
+        history
+    });
+    let x_is_next = use_state(|| true);
+
+    let current = (*history)
+        .last()
+        .expect("This should not be empty ever.")
+        .clone();
+    let winner = calculate_winner(current);
+
+    let handle_click = {
+        let history = history.clone();
+        let x_is_next = x_is_next.clone();
+
+        Callback::from(move |i: usize| {
+            let history = history.clone();
+            let x_is_next = x_is_next.clone();
+
+            Callback::from(move |_: MouseEvent| {
+                let mut squares = current.clone();
+
+                if winner.is_some() || squares[i].is_some() {
+                    return;
+                }
+
+                squares[i] = if *x_is_next { Some("X") } else { Some("O") };
+
+                let mut hist_clone = (*history).clone();
+                hist_clone.push(squares);
+                history.set(hist_clone);
+
+                x_is_next.set(!(*x_is_next));
+            })
+        })
+    };
+
+    let status = match winner {
+        Some(winner) => format!("Winner: {winner}"),
+        None => format!("Next player: {}", if *x_is_next { "X" } else { "O" }),
+    };
+
+    let squares = current.clone();
     html! {
         <div class="game">
             <div class="game-board">
-                <Board />
+                <Board {squares} {handle_click}/>
             </div>
             <div class="game-info">
-                <div>{ "status" }</div>
+                <div>{ status }</div>
                 <ol>{ "todo" }</ol>
             </div>
         </div>
