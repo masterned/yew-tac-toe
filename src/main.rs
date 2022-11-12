@@ -93,6 +93,28 @@ fn Game() -> Html {
         .clone();
     let winner = calculate_winner(current);
 
+    let moves: Vec<Html> = (*history)
+        .clone()
+        .iter()
+        .enumerate()
+        .map(|(i, _step)| {
+            let desc = if i != 0 {
+                format!("Go to move #{i}")
+            } else {
+                "Go to game start".to_string()
+            };
+
+            let onclick =
+                Callback::from(move |_: MouseEvent| log::info!("#{} has been clicked", i));
+
+            html! {
+                <li>
+                    <button {onclick}>{desc}</button>
+                </li>
+            }
+        })
+        .collect();
+
     let handle_click = {
         let history = history.clone();
         let x_is_next = x_is_next.clone();
@@ -132,7 +154,7 @@ fn Game() -> Html {
             </div>
             <div class="game-info">
                 <div>{ status }</div>
-                <ol>{ "todo" }</ol>
+                <ol>{ moves }</ol>
             </div>
         </div>
     }
