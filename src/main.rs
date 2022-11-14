@@ -10,7 +10,7 @@ struct SquareProps {
 fn Square(SquareProps { value, onclick }: &SquareProps) -> Html {
     html! {
         <button class="square" {onclick}>
-            { value.clone().unwrap_or("".to_string()) }
+            { value.to_owned().unwrap_or_default() }
         </button>
     }
 }
