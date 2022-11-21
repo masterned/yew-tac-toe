@@ -77,21 +77,27 @@ fn Board(
     }
 }
 
+#[derive(Clone)]
+struct Frame<'a> {
+    pub squares: [Option<&'a str>; 9],
+}
+
+impl Default for Frame<'static> {
+    fn default() -> Self {
+        Frame { squares: [None; 9] }
+    }
+}
+
 #[function_component]
 fn Game() -> Html {
-    let history = use_state(|| {
-        let mut history = Vec::new();
-        let empty_board: [Option<&str>; 9] = [None; 9];
-        history.push(empty_board);
-        history
-    });
+    let history = use_state(|| vec![Frame::default()]);
     let x_is_next = use_state(|| true);
 
     let current = (*history)
         .last()
         .expect("This should not be empty ever.")
         .clone();
-    let winner = calculate_winner(current);
+    let winner = calculate_winner(current.squares);
 
     let moves: Vec<Html> = (*history)
         .clone()
@@ -124,7 +130,7 @@ fn Game() -> Html {
             let x_is_next = x_is_next.clone();
 
             Callback::from(move |_: MouseEvent| {
-                let mut squares = current.clone();
+                let mut squares = current.squares.clone();
 
                 if winner.is_some() || squares[i].is_some() {
                     return;
@@ -133,7 +139,7 @@ fn Game() -> Html {
                 squares[i] = if *x_is_next { Some("X") } else { Some("O") };
 
                 let mut hist_clone = (*history).clone();
-                hist_clone.push(squares);
+                hist_clone.push(Frame { squares });
                 history.set(hist_clone);
 
                 x_is_next.set(!(*x_is_next));
@@ -146,7 +152,7 @@ fn Game() -> Html {
         None => format!("Next player: {}", if *x_is_next { "X" } else { "O" }),
     };
 
-    let squares = current.clone();
+    let squares = current.squares.clone();
     html! {
         <div class="game">
             <div class="game-board">
