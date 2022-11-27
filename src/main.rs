@@ -1,8 +1,8 @@
-use yew::{function_component, html, use_state, Callback, Html, MouseEvent, Properties};
+use yew::{function_component, html, use_state, AttrValue, Callback, Html, MouseEvent, Properties};
 
 #[derive(Properties, PartialEq)]
 struct SquareProps {
-    value: Option<String>,
+    value: Option<AttrValue>,
     onclick: Callback<MouseEvent, ()>,
 }
 
@@ -15,7 +15,7 @@ fn Square(SquareProps { value, onclick }: &SquareProps) -> Html {
     }
 }
 
-fn calculate_winner(squares: [Option<&str>; 9]) -> Option<&str> {
+fn calculate_winner<'a>(squares: &'a [Option<AttrValue>; 9]) -> &'a Option<AttrValue> {
     const LINES: [[usize; 3]; 8] = [
         [0, 1, 2],
         [3, 4, 5],
@@ -30,16 +30,16 @@ fn calculate_winner(squares: [Option<&str>; 9]) -> Option<&str> {
     for line in LINES {
         let [a, b, c] = line;
         if squares[a] == squares[b] && squares[a] == squares[c] {
-            return squares[a];
+            return &squares[a];
         }
     }
 
-    None
+    &None
 }
 
 #[derive(Properties, PartialEq)]
-struct BoardProps<'a> {
-    squares: [Option<&'a str>; 9],
+struct BoardProps {
+    squares: [Option<AttrValue>; 9],
     handle_click: Callback<usize, Callback<MouseEvent>>,
 }
 
@@ -48,12 +48,15 @@ fn Board(
     BoardProps {
         squares,
         handle_click,
-    }: &BoardProps<'static>,
+    }: &BoardProps,
 ) -> Html {
-    let render_square = |i: usize| {
-        let value = squares[i];
-        let onclick = handle_click.emit(i);
-        html! { <Square {value} {onclick} /> }
+    let render_square = {
+        let squares = squares.clone();
+        move |i: usize| {
+            let value = &squares[i];
+            let onclick = handle_click.emit(i);
+            html! { <Square {value} {onclick} /> }
+        }
     };
 
     html! {
@@ -78,13 +81,15 @@ fn Board(
 }
 
 #[derive(Clone)]
-struct Frame<'a> {
-    pub squares: [Option<&'a str>; 9],
+struct Frame {
+    pub squares: [Option<AttrValue>; 9],
 }
 
-impl Default for Frame<'static> {
+impl Default for Frame {
     fn default() -> Self {
-        Frame { squares: [None; 9] }
+        Frame {
+            squares: [None, None, None, None, None, None, None, None, None],
+        }
     }
 }
 
@@ -93,11 +98,8 @@ fn Game() -> Html {
     let history = use_state(|| vec![Frame::default()]);
     let x_is_next = use_state(|| true);
 
-    let current = (*history)
-        .last()
-        .expect("This should not be empty ever.")
-        .clone();
-    let winner = calculate_winner(current.squares);
+    let current = (*history).last().expect("This should not be empty ever.");
+    let winner = calculate_winner(&current.squares);
 
     let moves: Vec<Html> = (*history)
         .clone()
@@ -124,19 +126,25 @@ fn Game() -> Html {
     let handle_click = {
         let history = history.clone();
         let x_is_next = x_is_next.clone();
+        let current = current.clone();
 
         Callback::from(move |i: usize| {
             let history = history.clone();
             let x_is_next = x_is_next.clone();
+            let current = current.clone();
 
             Callback::from(move |_: MouseEvent| {
                 let mut squares = current.squares.clone();
 
-                if winner.is_some() || squares[i].is_some() {
+                if calculate_winner(&squares).is_some() || squares[i].is_some() {
                     return;
                 }
 
-                squares[i] = if *x_is_next { Some("X") } else { Some("O") };
+                squares[i] = if *x_is_next {
+                    Some(AttrValue::Static("X"))
+                } else {
+                    Some(AttrValue::Static("O"))
+                };
 
                 let mut hist_clone = (*history).clone();
                 hist_clone.push(Frame { squares });
