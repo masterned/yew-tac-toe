@@ -95,13 +95,16 @@ impl Default for Frame {
 
 #[function_component]
 fn Game() -> Html {
-    let history = use_state(|| vec![Frame::default()]);
-    let x_is_next = use_state(|| true);
+    let history_state = use_state(|| vec![Frame::default()]);
+    let step_number_state = use_state(|| 0);
+    let x_is_next_state = use_state(|| true);
 
-    let current = (*history).last().expect("This should not be empty ever.");
+    let current = (*history_state)
+        .last()
+        .expect("This should not be empty ever.");
     let winner = calculate_winner(&current.squares);
 
-    let moves: Vec<Html> = (*history)
+    let moves: Vec<Html> = (*history_state)
         .clone()
         .iter()
         .enumerate()
@@ -112,8 +115,15 @@ fn Game() -> Html {
                 "Go to game start".to_string()
             };
 
-            let onclick =
-                Callback::from(move |_: MouseEvent| log::info!("#{} has been clicked", i));
+            let step_number_state = step_number_state.clone();
+            let x_is_next_state = x_is_next_state.clone();
+
+            let jump_to = move |step: usize| {
+                step_number_state.set(step);
+                x_is_next_state.set((step % 2) == 0);
+            };
+
+            let onclick = Callback::from(move |_: MouseEvent| jump_to(i));
 
             html! {
                 <li>
@@ -124,40 +134,49 @@ fn Game() -> Html {
         .collect();
 
     let handle_click = {
-        let history = history.clone();
-        let x_is_next = x_is_next.clone();
-        let current = current.clone();
+        let history_state = history_state.clone();
+        let step_number_state = step_number_state.clone();
+        let x_is_next_state = x_is_next_state.clone();
 
         Callback::from(move |i: usize| {
-            let history = history.clone();
-            let x_is_next = x_is_next.clone();
-            let current = current.clone();
+            let history_state = history_state.clone();
+            let step_number_state = step_number_state.clone();
+            let x_is_next_state = x_is_next_state.clone();
 
             Callback::from(move |_: MouseEvent| {
+                let mut history = history_state
+                    .get(0..((*step_number_state) + 1))
+                    .expect("This should always work")
+                    .to_vec();
+                let current = history.last().expect("This should never be empty").clone();
                 let mut squares = current.squares.clone();
 
                 if calculate_winner(&squares).is_some() || squares[i].is_some() {
                     return;
                 }
 
-                squares[i] = if *x_is_next {
+                squares[i] = if *x_is_next_state {
                     Some(AttrValue::Static("X"))
                 } else {
                     Some(AttrValue::Static("O"))
                 };
 
-                let mut hist_clone = (*history).clone();
-                hist_clone.push(Frame { squares });
-                history.set(hist_clone);
+                history.push(Frame { squares });
+                {
+                    let history = history.clone();
+                    history_state.set(history);
+                }
 
-                x_is_next.set(!(*x_is_next));
+                step_number_state.set(history.len() - 1);
+
+                x_is_next_state.set(!(*x_is_next_state));
             })
         })
     };
 
     let status = match winner {
         Some(winner) => format!("Winner: {winner}"),
-        None => format!("Next player: {}", if *x_is_next { "X" } else { "O" }),
+        None => format!("Next player: {}", if *x_is_next_state { "X" } else { "O" }),
     };
 
     let squares = current.squares.clone();
