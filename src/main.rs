@@ -60,23 +60,15 @@ fn Board(
     };
 
     html! {
-        <div>
-            <div class="board-row">
-                { render_square(0) }
-                { render_square(1) }
-                { render_square(2) }
-            </div>
-            <div class="board-row">
-                { render_square(3) }
-                { render_square(4) }
-                { render_square(5) }
-            </div>
-            <div class="board-row">
-                { render_square(6) }
-                { render_square(7) }
-                { render_square(8) }
-            </div>
-        </div>
+        <div>{
+            for (0..3).map(|row| {
+                html! {
+                    <div class="board-row">{
+                        for (0..3).map(|col| render_square(row * 3 + col))
+                    }</div>
+                }
+            })
+        }</div>
     }
 }
 
